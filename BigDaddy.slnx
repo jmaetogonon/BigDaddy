@@ -1,0 +1,13 @@
+<Solution>
+  <Folder Name="/src/" />
+  <Folder Name="/src/API/">
+    <Project Path="BigDaddy.Api/BigDaddy.Api.csproj" Id="115209c1-7253-4d55-88e4-7228ecc53750" />
+  </Folder>
+  <Folder Name="/src/Core/">
+    <Project Path="BigDaddy.Application/BigDaddy.Application.csproj" Id="dcc20ebf-e0a5-4393-a835-0ee495040323" />
+    <Project Path="BigDaddy.Domain/BigDaddy.Domain.csproj" Id="757176d0-8902-4bdf-ae51-f00136303a88" />
+  </Folder>
+  <Folder Name="/src/Infrastructure/">
+    <Project Path="BigDaddy.Persistence/BigDaddy.Persistence.csproj" Id="42176a79-9006-42a9-8d3a-7c69b9436a1b" />
+  </Folder>
+</Solution>
