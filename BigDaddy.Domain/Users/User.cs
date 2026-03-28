@@ -2,8 +2,9 @@
 
 namespace BigDaddy.Domain.Users;
 
-public class User : BaseEntity
+public class User : IAuditableEntity
 {
+    public int Id { get; set; }
     public string FirstName { get; set; } = null!;
     public string LastName { get; set; } = null!;
     public string Username { get; set; } = null!;
@@ -12,8 +13,9 @@ public class User : BaseEntity
     public string? MobileNumber { get; set; }
     public bool IsActive { get; set; } = true;
     public bool IsLocked { get; set; } = false;
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime? UpdatedAt { get; set; }
 
-    // Navigation
     public ICollection<UserRole> UserRoles { get; set; } = [];
     public ICollection<UserTeam> UserTeams { get; set; } = [];
 }

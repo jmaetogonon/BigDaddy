@@ -8,6 +8,7 @@
     <Project Path="BigDaddy.Domain/BigDaddy.Domain.csproj" Id="757176d0-8902-4bdf-ae51-f00136303a88" />
   </Folder>
   <Folder Name="/src/Infrastructure/">
+    <Project Path="BigDaddy.Identity/BigDaddy.Identity.csproj" Id="dfede9cf-a56a-4813-8add-e702638d02c3" />
     <Project Path="BigDaddy.Persistence/BigDaddy.Persistence.csproj" Id="42176a79-9006-42a9-8d3a-7c69b9436a1b" />
   </Folder>
 </Solution>

@@ -12,10 +12,12 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="10.1.7" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\BigDaddy.Application\BigDaddy.Application.csproj" />
+    <ProjectReference Include="..\BigDaddy.Identity\BigDaddy.Identity.csproj" />
     <ProjectReference Include="..\BigDaddy.Persistence\BigDaddy.Persistence.csproj" />
   </ItemGroup>
 

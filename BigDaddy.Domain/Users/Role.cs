@@ -1,14 +1,13 @@
-﻿using BigDaddy.Domain.Common;
+﻿namespace BigDaddy.Domain.Users;
 
-namespace BigDaddy.Domain.Users;
-
-public class Role : BaseEntity
+public class Role
 {
-    public string Name { get; set; } = null!;           // e.g. SystemAdministrator, Manager, EndUser
+    public int Id { get; set; }
+    public string Name { get; set; } = null!;
     public string? Description { get; set; }
     public bool IsActive { get; set; } = true;
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
-    // Navigation
     public ICollection<UserRole> UserRoles { get; set; } = [];
     public ICollection<RolePermission> RolePermissions { get; set; } = [];
     public ICollection<TeamRole> TeamRoles { get; set; } = [];

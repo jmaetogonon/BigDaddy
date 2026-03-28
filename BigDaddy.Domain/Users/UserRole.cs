@@ -1,8 +1,6 @@
-﻿using BigDaddy.Domain.Common;
+﻿namespace BigDaddy.Domain.Users;
 
-namespace BigDaddy.Domain.Users;
-
-public class UserRole 
+public class UserRole
 {
     public int UserId { get; set; }
     public int RoleId { get; set; }

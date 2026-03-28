@@ -1,7 +1,7 @@
-﻿using BigDaddy.Application.Contracts.Services;
-using BigDaddy.Application.Models.Auth;
+﻿using BigDaddy.Application.Common;
+using BigDaddy.Application.Contracts.Persistence.Auth;
+using BigDaddy.Application.DTOs.Auth;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -14,59 +14,43 @@ public class AuthController : ControllerBase
 {
     private readonly IAuthService _authService;
 
-    public AuthController(IAuthService authService)
-    {
-        _authService = authService;
-    }
+    public AuthController(IAuthService authService) => _authService = authService;
 
     // POST /api/auth/login
     [HttpPost("login")]
     [AllowAnonymous]
-    public async Task<IActionResult> Login([FromBody] LoginRequest request)
+    public async Task<IActionResult> Login(
+        [FromBody] LoginRequestDto request,
+        CancellationToken ct)
     {
         if (!ModelState.IsValid)
-            return BadRequest(ModelState);
+            return BadRequest(ApiResponse.Fail("Validation failed.",
+                ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage)));
 
-        try
-        {
-            var result = await _authService.LoginAsync(request);
-            return Ok(result);
-        }
-        catch (UnauthorizedAccessException ex)
-        {
-            return Unauthorized(new { message = ex.Message });
-        }
-        catch (Exception)
-        {
-            return StatusCode(500, new { message = "An unexpected error occurred." });
-        }
+        var result = await _authService.LoginAsync(request, ct);
+        return Ok(ApiResponse<LoginResponseDto>.Ok(result));
     }
 
     // POST /api/auth/logout
     [HttpPost("logout")]
     [Authorize]
-    public async Task<IActionResult> Logout()
+    public async Task<IActionResult> Logout(CancellationToken ct)
     {
         var jti = User.FindFirst(JwtRegisteredClaimNames.Jti)?.Value;
         var sub = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
                ?? User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
 
-        // Get token expiry from claim
+        if (!int.TryParse(sub, out var userId) || jti is null)
+            return Unauthorized(ApiResponse.Fail("Invalid token claims."));
+
         var expClaim = User.FindFirst(JwtRegisteredClaimNames.Exp)?.Value;
-        var expiry = DateTime.UtcNow.AddHours(1); // fallback
+        var expiry = long.TryParse(expClaim, out var exp)
+            ? DateTimeOffset.FromUnixTimeSeconds(exp).UtcDateTime
+            : DateTime.UtcNow.AddHours(1);
 
-        if (expClaim is not null && long.TryParse(expClaim, out var expUnix))
-            expiry = DateTimeOffset.FromUnixTimeSeconds(expUnix).UtcDateTime;
+        await _authService.LogoutAsync(jti, userId, expiry, ct);
 
-        if (jti is null || sub is null)
-            return Unauthorized(new { message = "Invalid token claims." });
-
-        if (!int.TryParse(sub, out var userId))
-            return Unauthorized(new { message = "Invalid user identifier." });
-
-        await _authService.LogoutAsync(jti, userId, expiry);
-
-        return Ok(new { message = "Logged out successfully." });
+        return Ok(ApiResponse.Ok("Logged out successfully."));
     }
 
     // GET /api/auth/me  — example of a protected endpoint

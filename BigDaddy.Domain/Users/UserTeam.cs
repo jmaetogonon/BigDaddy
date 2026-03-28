@@ -1,8 +1,6 @@
-﻿using BigDaddy.Domain.Common;
+﻿namespace BigDaddy.Domain.Users;
 
-namespace BigDaddy.Domain.Users;
-
-public class UserTeam  
+public class UserTeam
 {
     public int UserId { get; set; }
     public int TeamId { get; set; }

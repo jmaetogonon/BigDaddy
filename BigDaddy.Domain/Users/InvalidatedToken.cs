@@ -1,9 +1,8 @@
-﻿using BigDaddy.Domain.Common;
+﻿namespace BigDaddy.Domain.Users;
 
-namespace BigDaddy.Domain.Users;
-
-public class InvalidatedToken : BaseEntity
-{ 
+public class InvalidatedToken
+{
+    public int Id { get; set; }
     public string Jti { get; set; } = null!;            // JWT ID claim
     public int UserId { get; set; }
     public DateTime ExpiresAt { get; set; }

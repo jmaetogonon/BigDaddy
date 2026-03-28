@@ -1,4 +1,4 @@
-﻿using BigDaddy.Application.Contracts.Services;
+﻿using BigDaddy.Application.Contracts.Persistence.Auth;
 using System.IdentityModel.Tokens.Jwt;
 
 namespace BigDaddy.Api.Middleware;
@@ -7,30 +7,25 @@ namespace BigDaddy.Api.Middleware;
 /// Runs after JWT authentication.
 /// Rejects requests whose token has been invalidated (logged out).
 /// </summary>
-public class TokenValidationMiddleware(RequestDelegate next)
+public class TokenValidationMiddleware
 {
-    private readonly RequestDelegate _next = next;
+    private readonly RequestDelegate _next;
+
+    public TokenValidationMiddleware(RequestDelegate next) => _next = next;
 
     public async Task InvokeAsync(HttpContext context, IAuthService authService)
     {
-        // Only check authenticated requests
         if (context.User.Identity?.IsAuthenticated == true)
         {
             var jti = context.User.FindFirst(JwtRegisteredClaimNames.Jti)?.Value;
 
-            if (!string.IsNullOrEmpty(jti))
+            if (!string.IsNullOrEmpty(jti) && await authService.IsTokenInvalidatedAsync(jti))
             {
-                var isInvalidated = await authService.IsTokenInvalidatedAsync(jti);
-
-                if (isInvalidated)
-                {
-                    context.Response.StatusCode = StatusCodes.Status401Unauthorized;
-                    context.Response.ContentType = "application/json";
-                    await context.Response.WriteAsync(
-                        """{"message":"Token has been invalidated. Please log in again."}"""
-                    );
-                    return;
-                }
+                context.Response.StatusCode = 401;
+                context.Response.ContentType = "application/json";
+                await context.Response.WriteAsync(
+                    """{"success":false,"message":"Token has been invalidated. Please log in again."}""");
+                return;
             }
         }
 
