@@ -1,4 +1,4 @@
-﻿using BigDaddy.Application.Contracts.Persistence.Auth;
+﻿using BigDaddy.Application.Contracts.Repositories;
 using System.IdentityModel.Tokens.Jwt;
 
 namespace BigDaddy.Api.Middleware;
@@ -13,15 +13,16 @@ public class TokenValidationMiddleware
 
     public TokenValidationMiddleware(RequestDelegate next) => _next = next;
 
-    public async Task InvokeAsync(HttpContext context, IAuthService authService)
+    public async Task InvokeAsync(HttpContext context, IUnitOfWork uow)
     {
         if (context.User.Identity?.IsAuthenticated == true)
         {
             var jti = context.User.FindFirst(JwtRegisteredClaimNames.Jti)?.Value;
 
-            if (!string.IsNullOrEmpty(jti) && await authService.IsTokenInvalidatedAsync(jti))
+            if (!string.IsNullOrEmpty(jti) &&
+                await uow.Auth.IsTokenInvalidatedAsync(jti))
             {
-                context.Response.StatusCode = 401;
+                context.Response.StatusCode = StatusCodes.Status401Unauthorized;
                 context.Response.ContentType = "application/json";
                 await context.Response.WriteAsync(
                     """{"success":false,"message":"Token has been invalidated. Please log in again."}""");

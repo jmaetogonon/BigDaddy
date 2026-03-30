@@ -18,12 +18,12 @@ public static class ApiExtensions
 
         services.AddAuthorization(options =>
         {
-            // Role policies
+            // Role-based policies
             options.AddPolicy("SystemAdministrator", p => p.RequireRole("SystemAdministrator"));
             options.AddPolicy("Manager", p => p.RequireRole("SystemAdministrator", "Manager"));
             options.AddPolicy("EndUser", p => p.RequireRole("SystemAdministrator", "Manager", "EndUser"));
 
-            // Permission policies — one per code
+            // Permission-based policies — one policy per permission code
             foreach (var code in permissionCodes)
                 options.AddPolicy(code, p => p.Requirements.Add(new PermissionRequirement(code)));
         });

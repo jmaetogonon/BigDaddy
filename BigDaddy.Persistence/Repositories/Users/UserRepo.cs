@@ -1,5 +1,5 @@
 ﻿using BigDaddy.Application.Contracts.Repositories;
-using BigDaddy.Application.DTOs.Users;
+using BigDaddy.Application.Features.Users.Queries.GetUsers;
 using BigDaddy.Domain.Users;
 using BigDaddy.Persistence.Data;
 using Microsoft.EntityFrameworkCore;
@@ -12,8 +12,10 @@ public class UserRepo : IUserRepo
 
     public UserRepo(AppDbContext db) => _db = db;
 
+    // ── READ — no tracking, fast ───────────────────────────────────────────────
+
     public async Task<(IEnumerable<User> Items, int TotalCount)> GetPagedAsync(
-        UserQueryDto query, CancellationToken ct = default)
+        GetUsersQuery query, CancellationToken ct = default)
     {
         var q = _db.Users
             .Include(u => u.UserRoles).ThenInclude(ur => ur.Role)
@@ -21,6 +23,7 @@ public class UserRepo : IUserRepo
             .AsNoTracking()
             .AsQueryable();
 
+        // ── Filter ─────────────────────────────────────────────────────────────
         if (!string.IsNullOrWhiteSpace(query.Search))
         {
             var term = query.Search.Trim().ToLower();
@@ -31,10 +34,16 @@ public class UserRepo : IUserRepo
                 u.Username.ToLower().Contains(term));
         }
 
-        if (query.IsActive.HasValue) q = q.Where(u => u.IsActive == query.IsActive.Value);
-        if (query.RoleId.HasValue) q = q.Where(u => u.UserRoles.Any(ur => ur.RoleId == query.RoleId.Value));
-        if (query.TeamId.HasValue) q = q.Where(u => u.UserTeams.Any(ut => ut.TeamId == query.TeamId.Value));
+        if (query.IsActive.HasValue)
+            q = q.Where(u => u.IsActive == query.IsActive.Value);
 
+        if (query.RoleId.HasValue)
+            q = q.Where(u => u.UserRoles.Any(ur => ur.RoleId == query.RoleId.Value));
+
+        if (query.TeamId.HasValue)
+            q = q.Where(u => u.UserTeams.Any(ut => ut.TeamId == query.TeamId.Value));
+
+        // ── Sort ───────────────────────────────────────────────────────────────
         var asc = query.SortDir.ToLower() != "desc";
         q = query.SortBy.ToLower() switch
         {
@@ -45,6 +54,7 @@ public class UserRepo : IUserRepo
             _ => asc ? q.OrderBy(u => u.CreatedAt) : q.OrderByDescending(u => u.CreatedAt)
         };
 
+        // ── Page ───────────────────────────────────────────────────────────────
         var page = Math.Max(1, query.Page);
         var pageSize = Math.Clamp(query.PageSize, 1, 100);
         var total = await q.CountAsync(ct);
@@ -60,27 +70,30 @@ public class UserRepo : IUserRepo
               .AsNoTracking()
               .FirstOrDefaultAsync(u => u.Id == id, ct);
 
+    // ── READ — tracked (for write operations) ─────────────────────────────────
     public Task<User?> GetByIdTrackedAsync(int id, CancellationToken ct = default)
         => _db.Users
               .Include(u => u.UserRoles)
               .Include(u => u.UserTeams)
               .FirstOrDefaultAsync(u => u.Id == id, ct);
 
-    public Task<bool> ExistsByEmailAsync(string email, int? excludeId = null, CancellationToken ct = default)
+    public Task<bool> ExistsByEmailAsync(
+        string email, int? excludeId = null, CancellationToken ct = default)
         => _db.Users.AnyAsync(u =>
               u.Email == email.Trim().ToLower() &&
-              (excludeId == null || u.Id != excludeId), ct);
+              (excludeId == null || u.Id != excludeId.Value), ct);
 
-    public Task<bool> ExistsByUsernameAsync(string username, int? excludeId = null, CancellationToken ct = default)
+    public Task<bool> ExistsByUsernameAsync(
+        string username, int? excludeId = null, CancellationToken ct = default)
         => _db.Users.AnyAsync(u =>
               u.Username == username.Trim().ToLower() &&
-              (excludeId == null || u.Id != excludeId), ct);
+              (excludeId == null || u.Id != excludeId.Value), ct);
 
-    public Task<int> CountRolesByIdsAsync(IEnumerable<int> roleIds, CancellationToken ct = default)
-        => _db.Roles.CountAsync(r => roleIds.Contains(r.Id), ct);
+    public Task<int> CountRolesByIdsAsync(IEnumerable<int> ids, CancellationToken ct = default)
+        => _db.Roles.CountAsync(r => ids.Contains(r.Id), ct);
 
-    public Task<int> CountTeamsByIdsAsync(IEnumerable<int> teamIds, CancellationToken ct = default)
-        => _db.Teams.CountAsync(t => teamIds.Contains(t.Id), ct);
+    public Task<int> CountTeamsByIdsAsync(IEnumerable<int> ids, CancellationToken ct = default)
+        => _db.Teams.CountAsync(t => ids.Contains(t.Id), ct);
 
     public Task<bool> RoleExistsAsync(int roleId, CancellationToken ct = default)
         => _db.Roles.AnyAsync(r => r.Id == roleId, ct);
@@ -88,13 +101,20 @@ public class UserRepo : IUserRepo
     public Task<bool> TeamExistsAsync(int teamId, CancellationToken ct = default)
         => _db.Teams.AnyAsync(t => t.Id == teamId, ct);
 
+    // ── WRITE — stage only, no SaveChanges ────────────────────────────────────
     public void Add(User user) => _db.Users.Add(user);
+
     public void Remove(User user) => _db.Users.Remove(user);
 
     public void AddUserRole(UserRole ur) => _db.UserRoles.Add(ur);
+
     public void AddUserTeam(UserTeam ut) => _db.UserTeams.Add(ut);
+
     public void AddUserRoles(IEnumerable<UserRole> urs) => _db.UserRoles.AddRange(urs);
+
     public void AddUserTeams(IEnumerable<UserTeam> uts) => _db.UserTeams.AddRange(uts);
+
     public void RemoveUserRoles(IEnumerable<UserRole> urs) => _db.UserRoles.RemoveRange(urs);
+
     public void RemoveUserTeams(IEnumerable<UserTeam> uts) => _db.UserTeams.RemoveRange(uts);
 }

@@ -8,7 +8,6 @@ public class Team
     public bool IsActive { get; set; } = true;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
-    // Navigation
     public ICollection<UserTeam> UserTeams { get; set; } = [];
     public ICollection<TeamRole> TeamRoles { get; set; } = [];
 }

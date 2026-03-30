@@ -11,7 +11,7 @@ using Microsoft.OpenApi;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-builder.Services.AddApplicationServices(builder.Configuration);
+builder.Services.AddApplicationServices();
 builder.Services.AddIdentityServices(builder.Configuration);
 builder.Services.AddPersistenceServices(builder.Configuration);
 
@@ -35,10 +35,8 @@ builder.Services.AddPermissionPolicies(
 // ── Background services ───────────────────────────────────────────────────────
 builder.Services.AddHostedService<TokenCleanupService>();
 
-// ── Controllers ───────────────────────────────────────────────────────────────
+// ── HTTP ──────────────────────────────────────────────────────────────────────
 builder.Services.AddControllers();
-
-// ── Swagger ───────────────────────────────────────────────────────────────────
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
@@ -59,9 +57,6 @@ builder.Services.AddSwaggerGen(c =>
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-//builder.Services.AddOpenApi();
 
 var app = builder.Build();
 

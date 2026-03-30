@@ -1,6 +1,4 @@
 ﻿using BigDaddy.Application.Contracts.Identity;
-using BigDaddy.Application.Contracts.Persistence.Auth;
-using BigDaddy.Application.Contracts.Persistence.Users;
 using BigDaddy.Identity.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Http;

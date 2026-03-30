@@ -19,16 +19,23 @@ public class TokenCleanupService : BackgroundService
     {
         while (!stoppingToken.IsCancellationRequested)
         {
-            using var scope = _scopeFactory.CreateScope();
-            var uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+            try
+            {
+                using var scope = _scopeFactory.CreateScope();
+                var uow = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
 
-            var deleted = await uow.Auth.PurgeExpiredTokensAsync(stoppingToken);
+                var deleted = await uow.Auth.PurgeExpiredTokensAsync(stoppingToken);
 
-            if (deleted > 0)
-                _logger.LogInformation(
-                    "Token cleanup: purged {Count} expired tokens.", deleted);
+                if (deleted > 0)
+                    _logger.LogInformation(
+                        "Token cleanup: purged {Count} expired tokens.", deleted);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Token cleanup job failed.");
+            }
 
             await Task.Delay(TimeSpan.FromHours(1), stoppingToken);
         }
     }
-}
+} 

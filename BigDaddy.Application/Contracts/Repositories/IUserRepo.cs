@@ -1,4 +1,4 @@
-﻿using BigDaddy.Application.DTOs.Users;
+﻿using BigDaddy.Application.Features.Users.Queries.GetUsers;
 using BigDaddy.Domain.Users;
 
 namespace BigDaddy.Application.Contracts.Repositories;
@@ -6,7 +6,7 @@ namespace BigDaddy.Application.Contracts.Repositories;
 public interface IUserRepo
 {
     Task<(IEnumerable<User> Items, int TotalCount)> GetPagedAsync(
-        UserQueryDto query, CancellationToken ct = default);
+           GetUsersQuery query, CancellationToken ct = default);
 
     Task<User?> GetByIdAsync(int id, CancellationToken ct = default);
     Task<User?> GetByIdTrackedAsync(int id, CancellationToken ct = default);

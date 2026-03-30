@@ -1,6 +1,8 @@
-﻿using BigDaddy.Application.Common;
-using BigDaddy.Application.Contracts.Persistence.Auth;
-using BigDaddy.Application.DTOs.Auth;
+﻿using BigDaddy.Application.Abstractions;
+using BigDaddy.Application.Common;
+using BigDaddy.Application.Features.Auth.Commands.Login;
+using BigDaddy.Application.Features.Auth.Commands.Logout;
+using BigDaddy.Application.Features.Auth.DTOs;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.IdentityModel.Tokens.Jwt;
@@ -12,22 +14,18 @@ namespace BigDaddy.Api.Controllers.Auth;
 [ApiController]
 public class AuthController : ControllerBase
 {
-    private readonly IAuthService _authService;
+    private readonly Dispatcher _dispatcher;
 
-    public AuthController(IAuthService authService) => _authService = authService;
+    public AuthController(Dispatcher dispatcher) => _dispatcher = dispatcher;
 
     // POST /api/auth/login
     [HttpPost("login")]
     [AllowAnonymous]
     public async Task<IActionResult> Login(
-        [FromBody] LoginRequestDto request,
+        [FromBody] LoginCommand command,
         CancellationToken ct)
     {
-        if (!ModelState.IsValid)
-            return BadRequest(ApiResponse.Fail("Validation failed.",
-                ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage)));
-
-        var result = await _authService.LoginAsync(request, ct);
+        var result = await _dispatcher.CommandAsync<LoginResponseDto>(command, ct);
         return Ok(ApiResponse<LoginResponseDto>.Ok(result));
     }
 
@@ -37,8 +35,7 @@ public class AuthController : ControllerBase
     public async Task<IActionResult> Logout(CancellationToken ct)
     {
         var jti = User.FindFirst(JwtRegisteredClaimNames.Jti)?.Value;
-        var sub = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
-               ?? User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+        var sub = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
         if (!int.TryParse(sub, out var userId) || jti is null)
             return Unauthorized(ApiResponse.Fail("Invalid token claims."));
@@ -48,17 +45,13 @@ public class AuthController : ControllerBase
             ? DateTimeOffset.FromUnixTimeSeconds(exp).UtcDateTime
             : DateTime.UtcNow.AddHours(1);
 
-        await _authService.LogoutAsync(jti, userId, expiry, ct);
+        await _dispatcher.CommandAsync(new LogoutCommand
+        {
+            Jti = jti,
+            UserId = userId,
+            TokenExpiry = expiry
+        }, ct);
 
         return Ok(ApiResponse.Ok("Logged out successfully."));
-    }
-
-    // GET /api/auth/me  — example of a protected endpoint
-    [HttpGet("me")]
-    [Authorize]
-    public IActionResult Me()
-    {
-        var claims = User.Claims.Select(c => new { c.Type, c.Value });
-        return Ok(claims);
     }
 }

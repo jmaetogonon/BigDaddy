@@ -9,6 +9,5 @@ public class Permission
     public string Code { get; set; } = null!;           // e.g. users.userlist.view
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
-    // Navigation
     public ICollection<RolePermission> RolePermissions { get; set; } = [];
 }
